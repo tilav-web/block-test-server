@@ -129,6 +129,7 @@ export class QuizService {
     period: 'daily' | 'weekly' | 'monthly',
     page = 1,
     limit = 10,
+    userId: string,
   ) {
     const today = new Date();
     const startDate = new Date();
@@ -147,11 +148,14 @@ export class QuizService {
 
     const skip = (page - 1) * limit;
 
+    const query: any = {
+      createdAt: { $gte: startDate, $lte: today },
+    };
+    query.user = userId;
+
     const [results, total] = await Promise.all([
       this.quizModel
-        .find({
-          createdAt: { $gte: startDate, $lte: today },
-        })
+        .find(query)
         .sort({ totalScore: -1 })
         .skip(skip)
         .limit(limit)
@@ -161,9 +165,7 @@ export class QuizService {
         .populate('addition.subject', 'name')
         .populate('mandatory.subject', 'name')
         .exec(),
-      this.quizModel.countDocuments({
-        createdAt: { $gte: startDate, $lte: today },
-      }),
+      this.quizModel.countDocuments(query),
     ]);
 
     return {

@@ -7,12 +7,16 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { AuthGuard } from '../user/guards/auth.guard';
 
 @Controller('quiz')
+@UseGuards(AuthGuard)
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
@@ -41,8 +45,10 @@ export class QuizController {
     @Param('period') period: 'daily' | 'weekly' | 'monthly',
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Request() req,
   ) {
-    return this.quizService.getQuizResults(period, page, limit);
+    const user = req.user;
+    return this.quizService.getQuizResults(period, page, limit, user._id);
   }
 
   @Get('ratings/:period')
