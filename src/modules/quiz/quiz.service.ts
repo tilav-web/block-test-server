@@ -151,7 +151,7 @@ export class QuizService {
     const query: any = {
       createdAt: { $gte: startDate, $lte: today },
     };
-    query.user = userId;
+    query.user = new Types.ObjectId(userId);
 
     const [results, total] = await Promise.all([
       this.quizModel
