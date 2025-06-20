@@ -58,7 +58,19 @@ export class CombinedFileUploadInterceptor implements NestInterceptor {
           request.body = {};
         }
 
-        // Handle question file - set as target if type is file
+        // 1. Always parse options as array
+        if (typeof request.body.options === 'string') {
+          try {
+            request.body.options = JSON.parse(request.body.options);
+          } catch (e) {
+            request.body.options = [];
+          }
+        }
+        if (!Array.isArray(request.body.options)) {
+          request.body.options = [];
+        }
+
+        // 2. Handle question file - set as target if type is file
         if (request.files && 'file' in request.files) {
           const questionFile = (request.files as any).file[0];
           if (questionFile) {
@@ -91,7 +103,7 @@ export class CombinedFileUploadInterceptor implements NestInterceptor {
           }
         }
 
-        // Handle option files
+        // 3. Handle option files
         if (request.files && 'optionFiles' in request.files) {
           const optionFiles = (request.files as any).optionFiles;
           const options = request.body.options || [];
@@ -112,6 +124,10 @@ export class CombinedFileUploadInterceptor implements NestInterceptor {
               if (fileOptions[fileIndex]) {
                 const { index } = fileOptions[fileIndex];
                 const filePath = `/uploads/${file.filename}`;
+                // If this option's value matches correctOptionValue, update correctOptionValue to filePath
+                if (request.body.correctOptionValue && options[index].value === request.body.correctOptionValue) {
+                  request.body.correctOptionValue = filePath;
+                }
                 options[index].value = filePath;
               }
             });

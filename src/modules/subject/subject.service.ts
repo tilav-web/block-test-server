@@ -64,4 +64,14 @@ export class SubjectService {
       throw new NotFoundException(`Subject with ID ${id} not found`);
     }
   }
+
+  async findLimited(limit: number): Promise<Subject[]> {
+    return this.subjectModel.find().limit(limit).exec();
+  }
+
+  async searchByName(query: string): Promise<Subject[]> {
+    return this.subjectModel.find({
+      name: { $regex: query, $options: 'i' },
+    }).exec();
+  }
 }

@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { SubjectService } from './subject.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
@@ -31,6 +32,19 @@ export class SubjectController {
   @UseGuards(AuthGuard)
   findAll() {
     return this.subjectService.findAll();
+  }
+
+  @Get('limited')
+  @UseGuards(AuthGuard)
+  findLimited(@Query('limit') limit?: string) {
+    const lim = limit ? parseInt(limit, 10) : 10;
+    return this.subjectService.findLimited(lim);
+  }
+
+  @Get('search')
+  @UseGuards(AuthGuard)
+  searchByName(@Query('q') q: string) {
+    return this.subjectService.searchByName(q || '');
   }
 
   @Get(':id')
