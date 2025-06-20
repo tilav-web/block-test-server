@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Quiz, QuizDocument } from './quiz.schema';
@@ -39,6 +39,13 @@ export class QuizService {
   }
 
   async saveResult(dto: CreateQuizDto, userId: Types.ObjectId) {
+    if (!userId) {
+      throw new BadRequestException("Foydalanuvchi aniqlanmadi (userId yo'q)");
+    }
+    if (!dto.block) {
+      throw new BadRequestException('Block ID yuborilmadi');
+    }
+
     // Helper to count correct answers for a subject
     const countCorrectAnswers = async (
       subjectId: Types.ObjectId,
@@ -128,9 +135,10 @@ export class QuizService {
 
     // Remove blockId from user's accessible_blocks
     if (userId && dto.block) {
+      console.log(1);
       await this.userModel.updateOne(
         { _id: userId },
-        { $pull: { accessible_blocks: dto.block } },
+        { $pull: { accessible_blocks: new Types.ObjectId(dto.block) } },
       );
     }
 
