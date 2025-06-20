@@ -13,9 +13,6 @@ class SubjectAnswerDto {
 
 export class CreateQuizDto {
   @IsMongoId()
-  user: Types.ObjectId;
-
-  @IsMongoId()
   block: Types.ObjectId;
 
   @ValidateNested()

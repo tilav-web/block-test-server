@@ -31,8 +31,8 @@ export class QuizController {
   }
 
   @Post('result')
-  saveResult(@Body() dto: CreateQuizDto) {
-    return this.quizService.saveResult(dto);
+  saveResult(@Body() dto: CreateQuizDto, @Request() req) {
+    return this.quizService.saveResult(dto, req.user._id);
   }
 
   @Get('results')

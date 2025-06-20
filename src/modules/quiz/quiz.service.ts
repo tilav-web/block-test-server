@@ -5,12 +5,14 @@ import { Quiz, QuizDocument } from './quiz.schema';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { Test } from '../test/test.schema';
+import { User, UserDocument } from '../user/user.schema';
 
 @Injectable()
 export class QuizService {
   constructor(
     @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
     @InjectModel(Test.name) private testModel: Model<Test>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async create(createQuizDto: CreateQuizDto): Promise<Quiz> {
@@ -36,7 +38,7 @@ export class QuizService {
     return this.quizModel.findByIdAndDelete(id).exec();
   }
 
-  async saveResult(dto: any) {
+  async saveResult(dto: CreateQuizDto, userId: Types.ObjectId) {
     // Helper to count correct answers for a subject
     const countCorrectAnswers = async (
       subjectId: Types.ObjectId,
@@ -113,7 +115,7 @@ export class QuizService {
       (mandatoryResults.reduce((sum, item) => sum + (item.score || 0), 0) || 0);
 
     const quizToSave = {
-      user: dto.user,
+      user: userId,
       block: dto.block,
       main: mainResult,
       addition: additionResult,
@@ -122,7 +124,17 @@ export class QuizService {
     };
 
     const createdQuiz = new this.quizModel(quizToSave);
-    return createdQuiz.save();
+    const savedQuiz = await createdQuiz.save();
+
+    // Remove blockId from user's accessible_blocks
+    if (userId && dto.block) {
+      await this.userModel.updateOne(
+        { _id: userId },
+        { $pull: { accessible_blocks: dto.block } },
+      );
+    }
+
+    return savedQuiz;
   }
 
   async getQuizResults(
