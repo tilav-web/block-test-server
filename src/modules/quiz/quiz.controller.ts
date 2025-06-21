@@ -9,11 +9,14 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
 } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { AuthGuard } from '../user/guards/auth.guard';
+import { join } from 'path';
+import { Response } from 'express';
 
 @Controller('quiz')
 @UseGuards(AuthGuard)
@@ -74,5 +77,22 @@ export class QuizController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.quizService.remove(id);
+  }
+
+  @Get('uploads/:filename')
+  async getUploadedFile(
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    const filePath = join(process.cwd(), 'uploads', filename);
+    return res.sendFile(filePath, (err) => {
+      if (err) {
+        res.status(404).json({
+          message: 'Fayl topilmadi',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+      }
+    });
   }
 }
