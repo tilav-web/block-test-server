@@ -13,7 +13,6 @@ async function bootstrap() {
     origin: process.env.CLIENT_URL || 'https://blok-tets.uz',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
   // Use cookie parser

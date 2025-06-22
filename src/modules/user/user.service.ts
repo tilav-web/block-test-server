@@ -13,6 +13,7 @@ import { User, UserDocument, UserRole } from './user.schema';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/user-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -210,5 +211,42 @@ export class AuthService {
 
     const blockObjectId = new Types.ObjectId(blockId);
     return user.accessible_blocks.some((id) => id.equals(blockObjectId));
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const { oldPassword, newPassword, confirmPassword } = dto;
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Foydalanuvchi topilmadi');
+    }
+
+    // Check old password
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isOldPasswordValid) {
+      throw new BadRequestException("Joriy parol noto'g'ri");
+    }
+
+    // Check new passwords match
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Yangi parollar mos emas');
+    }
+
+    // Optionally: check new password is different from old
+    if (await bcrypt.compare(newPassword, user.password)) {
+      throw new BadRequestException(
+        'Yangi parol joriy paroldan farq qilishi kerak',
+      );
+    }
+
+    // Hash and update password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    user.password = hashedPassword;
+    await user.save();
+
+    return { message: "Parol muvaffaqiyatli o'zgartirildi" };
   }
 }

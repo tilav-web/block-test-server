@@ -19,6 +19,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { RolesGuard, Roles } from './guards/roles.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User, UserRole } from './user.schema';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -219,5 +220,15 @@ export class AuthController {
       hasAccess,
       blockId,
     };
+  }
+
+  @Patch('change-password')
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async changePassword(
+    @CurrentUser() user: User & { _id: string },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return await this.authService.changePassword(user._id, dto);
   }
 }
