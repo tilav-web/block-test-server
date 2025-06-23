@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
@@ -41,8 +42,8 @@ export class TestController {
 
   @Get()
   @UseGuards(AuthGuard)
-  findAll() {
-    return this.testService.findAll();
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+    return this.testService.findAll(page, limit);
   }
 
   @Get('subject/:subjectId')

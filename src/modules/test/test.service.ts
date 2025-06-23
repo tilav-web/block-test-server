@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Test, TestType, TestDegree } from './test.schema';
+import { Test, TestType } from './test.schema';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { Option } from '../option/option.schema';
@@ -55,12 +55,33 @@ export class TestService {
     return this.findOne(test._id.toString());
   }
 
-  async findAll(): Promise<Test[]> {
-    return this.testModel
-      .find()
-      .populate('subject', 'name')
-      .populate('options', 'type value')
-      .exec();
+  async findAll(
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    results: Test[];
+    pagination: { total: number; pages: number; page: number; limit: number };
+  }> {
+    const skip = (page - 1) * limit;
+    const [results, total] = await Promise.all([
+      this.testModel
+        .find()
+        .skip(skip)
+        .limit(limit)
+        .populate('subject', 'name')
+        .populate('options', 'type value')
+        .exec(),
+      this.testModel.countDocuments(),
+    ]);
+    return {
+      results,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        page,
+        limit,
+      },
+    };
   }
 
   async findOne(id: string): Promise<Test> {
