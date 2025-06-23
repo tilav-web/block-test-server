@@ -330,4 +330,61 @@ export class QuizService {
       },
     };
   }
+
+  async getUserQuizRatings(
+    period: 'daily' | 'weekly' | 'monthly' | 'all',
+    page = 1,
+    limit = 10,
+    userId: string,
+  ) {
+    const numPage = Number(page);
+    const numLimit = Number(limit);
+    const today = new Date();
+    let startDate: Date | null = new Date();
+    if (period === 'all') {
+      startDate = null;
+    } else {
+      switch (period) {
+        case 'daily':
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'weekly':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'monthly':
+          startDate.setMonth(today.getMonth() - 1);
+          break;
+      }
+    }
+    const initialMatch: any = startDate
+      ? {
+          createdAt: { $gte: startDate, $lte: today },
+          user: new Types.ObjectId(userId),
+        }
+      : { user: new Types.ObjectId(userId) };
+    const skip = (numPage - 1) * numLimit;
+    const [results, total] = await Promise.all([
+      this.quizModel
+        .find(initialMatch)
+        .sort({ totalScore: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(numLimit)
+        .populate('user', 'full_name')
+        .populate('block', 'name')
+        .populate('main.subject', 'name')
+        .populate('addition.subject', 'name')
+        .populate('mandatory.subject', 'name')
+        .exec(),
+      this.quizModel.countDocuments(initialMatch),
+    ]);
+    return {
+      results,
+      pagination: {
+        total,
+        pages: Math.ceil(total / numLimit),
+        page: numPage,
+        limit: numLimit,
+      },
+    };
+  }
 }

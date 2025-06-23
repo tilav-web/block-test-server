@@ -55,13 +55,14 @@ export class QuizController {
   }
 
   @Get('ratings/:period')
-  getRatings(
+  async getUserRatings(
     @Param('period') period: 'daily' | 'weekly' | 'monthly' | 'all',
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Query('blockName') blockName?: string,
+    @Request() req,
   ) {
-    return this.quizService.getQuizRatings(period, page, limit, blockName);
+    const user = req.user;
+    return this.quizService.getUserQuizRatings(period, page, limit, user._id);
   }
 
   @Get(':id')
