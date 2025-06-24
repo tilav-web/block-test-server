@@ -2,13 +2,22 @@ import { Types } from 'mongoose';
 import { IsMongoId, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
+class AnswerPairDto {
+  @IsMongoId()
+  questionId: Types.ObjectId;
+
+  @IsMongoId()
+  answerId: Types.ObjectId;
+}
+
 class SubjectAnswerDto {
   @IsMongoId()
   subject: Types.ObjectId;
 
   @IsArray()
-  @IsMongoId({ each: true })
-  answers: Types.ObjectId[];
+  @ValidateNested({ each: true })
+  @Type(() => AnswerPairDto)
+  answers: AnswerPairDto[];
 }
 
 export class CreateQuizDto {

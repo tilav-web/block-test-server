@@ -38,6 +38,27 @@ export class QuizService {
     return this.quizModel.findByIdAndDelete(id).exec();
   }
 
+  private async countCorrectAnswers(
+    subjectId: Types.ObjectId,
+    userAnswers: { questionId: Types.ObjectId; answerId: Types.ObjectId }[],
+  ) {
+    const questions = await this.testModel.find({ subject: subjectId });
+    let correct = 0;
+    questions.forEach((q) => {
+      const userAnswer = userAnswers.find(
+        (a) => a.questionId.toString() === q._id.toString(),
+      );
+      if (
+        userAnswer &&
+        q.correctOptionId &&
+        userAnswer.answerId.toString() === q.correctOptionId.toString()
+      ) {
+        correct++;
+      }
+    });
+    return correct;
+  }
+
   async saveResult(dto: CreateQuizDto, userId: Types.ObjectId) {
     if (!userId) {
       throw new BadRequestException("Foydalanuvchi aniqlanmadi (userId yo'q)");
@@ -46,29 +67,12 @@ export class QuizService {
       throw new BadRequestException('Block ID yuborilmadi');
     }
 
-    // Helper to count correct answers for a subject
-    const countCorrectAnswers = async (
-      subjectId: Types.ObjectId,
-      userAnswers: Types.ObjectId[],
-    ) => {
-      const questions = await this.testModel.find({ subject: subjectId });
-      let correct = 0;
-      questions.forEach((q, idx) => {
-        if (
-          userAnswers[idx] &&
-          q.correctOptionId &&
-          userAnswers[idx].toString() === q.correctOptionId.toString()
-        ) {
-          correct++;
-        }
-      });
-      return correct;
-    };
+    console.log(dto);
 
     // Main
     let mainResult = null;
     if (dto.main && dto.main.subject && Array.isArray(dto.main.answers)) {
-      const correctAnswers = await countCorrectAnswers(
+      const correctAnswers = await this.countCorrectAnswers(
         dto.main.subject,
         dto.main.answers,
       );
@@ -86,7 +90,7 @@ export class QuizService {
       dto.addition.subject &&
       Array.isArray(dto.addition.answers)
     ) {
-      const correctAnswers = await countCorrectAnswers(
+      const correctAnswers = await this.countCorrectAnswers(
         dto.addition.subject,
         dto.addition.answers,
       );
@@ -102,7 +106,7 @@ export class QuizService {
     if (Array.isArray(dto.mandatory)) {
       for (const item of dto.mandatory) {
         if (item && item.subject && Array.isArray(item.answers)) {
-          const correctAnswers = await countCorrectAnswers(
+          const correctAnswers = await this.countCorrectAnswers(
             item.subject,
             item.answers,
           );
@@ -135,7 +139,6 @@ export class QuizService {
 
     // Remove blockId from user's accessible_blocks
     if (userId && dto.block) {
-      console.log(1);
       await this.userModel.updateOne(
         { _id: userId },
         { $pull: { accessible_blocks: new Types.ObjectId(dto.block) } },
